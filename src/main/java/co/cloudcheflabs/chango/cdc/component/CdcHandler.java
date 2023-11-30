@@ -8,6 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -15,12 +16,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static io.debezium.data.Envelope.FieldName.*;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toMap;
 
 @Component
@@ -45,6 +49,8 @@ public class CdcHandler implements InitializingBean, DisposableBean {
 
     private final Executor executor = Executors.newSingleThreadExecutor();
     private EmbeddedEngine engine;
+
+    private Map<String, Object> sampleMessageForTableSchema;
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -81,55 +87,122 @@ public class CdcHandler implements InitializingBean, DisposableBean {
     }
 
     private void handleEvent(SourceRecord sourceRecord) {
-        Struct sourceRecordValue = (Struct) sourceRecord.value();
+        try {
+            LOG.info("source record: {}", sourceRecord.toString());
+            Struct sourceRecordValue = (Struct) sourceRecord.value();
 
-        if(sourceRecordValue != null) {
-            Operation operation = Operation.forCode((String) sourceRecordValue.get(OPERATION));
+            if (sourceRecordValue != null) {
+                Operation operation = Operation.forCode((String) sourceRecordValue.get(OPERATION));
 
-            //Only if this is a transactional operation.
-            if(operation != Operation.READ) {
+                // Only if this is a transactional operation.
+                if (operation != Operation.READ) {
 
-                Map<String, Object> message;
-                String record = AFTER; // For Update & Insert operations.
+                    Map<String, Object> message;
+                    String record = AFTER; // For Update & Insert operations.
 
-                if (operation == Operation.DELETE) {
-                    record = BEFORE; // For Delete operations.
+                    if (operation == Operation.DELETE) {
+                        record = BEFORE; // For Delete operations.
+                    }
+
+                    // Build a map with all row data received.
+                    Struct struct = (Struct) sourceRecordValue.get(record);
+                    message = struct.schema().fields().stream()
+                            .map(Field::name)
+                            .filter(fieldName -> struct.get(fieldName) != null)
+                            .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
+                            .collect(toMap(Pair::getKey, Pair::getValue));
+
+
+                    // set sample message to get table schema later.
+                    if(this.sampleMessageForTableSchema == null) {
+                        if (!Operation.DELETE.name().equals(operation.name())) {
+                            this.sampleMessageForTableSchema = message;
+                        }
+                    }
+
+                    // TODO: send message to chango.
+
+                    // if field 'op' exists in the table, then change the field name.
+                    if(message.keySet().contains("op")) {
+                        message.put("_op", message.get("op"));
+                    }
+
+                    if (Operation.DELETE.name().equals(operation.name())) {
+                        // add fields from the sample message for delete message.
+                        if(this.sampleMessageForTableSchema != null) {
+                            for(String key : this.sampleMessageForTableSchema.keySet()) {
+                                if(message.keySet().contains(key)) {
+                                    continue;
+                                }
+                                Object value = this.sampleMessageForTableSchema.get(key);
+                                if(value == null) {
+                                    message.put(key, null);
+                                } else {
+                                    if (value instanceof String) {
+                                        message.put(key, "");
+                                    } else if (value instanceof Boolean) {
+                                        message.put(key, Boolean.valueOf(false));
+                                    } else {
+                                        message.put(key, -1);
+                                    }
+                                }
+                            }
+                        } else {
+                            LOG.warn("Sample Message for Table Schema Not Set!");
+                            return;
+                        }
+                        message.put("op", "delete");
+                    } else if (Operation.UPDATE.name().equals(operation.name())) {
+                        message.put("op", "update");
+                    } else if (Operation.CREATE.name().equals(operation.name())) {
+                        message.put("op", "insert");
+                    }
+
+
+                    DateTime dt = DateTime.now();
+
+                    String year = String.valueOf(dt.getYear());
+                    String month = padZero(dt.getMonthOfYear());
+                    String day = padZero(dt.getDayOfMonth());
+                    long ts = dt.getMillis(); // in milliseconds.
+
+                    // if the following fields exist in the table, then change the field names.
+                    if(message.keySet().contains("year")) {
+                        message.put("_year", message.get("year"));
+                    }
+                    if(message.keySet().contains("month")) {
+                        message.put("_month", message.get("month"));
+                    }
+                    if(message.keySet().contains("day")) {
+                        message.put("_day", message.get("day"));
+                    }
+                    if(message.keySet().contains("ts")) {
+                        message.put("_ts", message.get("ts"));
+                    }
+                    // and add chango specific fields.
+                    message.put("year", year);
+                    message.put("month", month);
+                    message.put("day", day);
+                    message.put("ts", ts);
+
+                    String json = JsonUtils.toJson(message);
+                    LOG.info("Operation {} executed with message {}", operation.name(), json);
+                    try {
+                        // send json.
+                        changoClient.add(json);
+                    } catch (Exception e) {
+                        LOG.error(e.getMessage());
+
+                        // reconstruct chango client.
+                        constructChangoClient();
+                        LOG.info("Chango client reconstructed.");
+                        pause(1000);
+                    }
                 }
-
-                // Build a map with all row data received.
-                Struct struct = (Struct) sourceRecordValue.get(record);
-                message = struct.schema().fields().stream()
-                        .map(Field::name)
-                        .filter(fieldName -> struct.get(fieldName) != null)
-                        .map(fieldName -> Pair.of(fieldName, struct.get(fieldName)))
-                        .collect(toMap(Pair::getKey, Pair::getValue));
-
-                // TODO: send message to chango.
-
-                if(Operation.DELETE.name().equals(operation.name())) {
-
-                } else if(Operation.UPDATE.name().equals(operation.name())) {
-
-                } else if(Operation.CREATE.name().equals(operation.name())) {
-
-                }
-
-
-                String json = JsonUtils.toJson(message);
-                LOG.info("Operation {} executed with message {}", operation.name(), json);
-
-//                try {
-//                    // send json.
-//                    changoClient.add(json);
-//                } catch (Exception e) {
-//                    LOG.error(e.getMessage());
-//
-//                    // reconstruct chango client.
-//                    constructChangoClient();
-//                    LOG.info("Chango client reconstructed.");
-//                    pause(1000);
-//                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOG.error("ERROR: {}", e.getMessage());
         }
     }
 

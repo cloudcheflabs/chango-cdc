@@ -87,7 +87,7 @@
 		<kryo.version>5.3.0</kryo.version>
 
 		<!-- debezium -->
-		<debezium.version>2.4.1.Final</debezium.version>
+		<debezium.version>1.9.7.Final</debezium.version>
 
 		<!-- commons lang3 -->
 		<commons-lang3>3.14.0</commons-lang3>
@@ -98,6 +98,11 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>${commons-lang3}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.debezium</groupId>
+			<artifactId>debezium-api</artifactId>
+			<version>${debezium.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.debezium</groupId>
