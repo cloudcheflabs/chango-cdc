@@ -1,0 +1,8 @@
+chango:
+  token: any-chango-credential
+  dataApiUrl: http://any-data-api-endpoint
+  schema: cdc_db
+  table: customer
+  batchSize: 10000
+  interval: 1000
+
