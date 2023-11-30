@@ -26,4 +26,12 @@ public class ConfigurationLoader {
 
         return props;
     }
+
+    @Bean
+    public io.debezium.config.Configuration debeziumConnector() {
+        String debeziumConnnectorPropString = configuration().getProperty("debezium.connector");
+        Properties debeziumConnectorProps = StringUtils.stringToProperties(debeziumConnnectorPropString);
+
+        return io.debezium.config.Configuration.from(debeziumConnectorProps);
+    }
 }

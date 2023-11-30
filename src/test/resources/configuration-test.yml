@@ -6,3 +6,17 @@ chango:
   batchSize: 10000
   interval: 1000
 
+debezium:
+  connector: |-
+    connector.class=io.debezium.connector.postgresql.PostgresConnector
+    offset.storage=org.apache.kafka.connect.storage.FileOffsetBackingStore
+    offset.storage.file.filename=/tmp/chango-cdc-offset/customer-offset.dat
+    offset.flush.interval.ms=60000
+    name=customer-postgres-connector
+    database.server.name=postgresql-server
+    database.hostname=any-pg.example.com
+    database.port=5432
+    database.user=anyuser
+    database.password=anypassword
+    database.dbname=anydatabase
+    table.whitelist=anytable
