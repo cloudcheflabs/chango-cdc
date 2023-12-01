@@ -31,7 +31,7 @@ mvn -e clean install -Ddebezium.version=${DEBEZIUM_VERSION};
 
 
 export CURRENT_DIR=$(pwd);
-export CHANGO_CDC_DIST_NAME=chango-cdc-${CHANGO_CDC_VERSION}-linux-x64
+export CHANGO_CDC_DIST_NAME=chango-cdc-${CHANGO_CDC_VERSION}-debezium-${DEBEZIUM_VERSION}-linux-x64
 export CHANGO_CDC_DIST_BASE=${CURRENT_DIR}/dist
 export CHANGO_CDC_DIST_DIR=${CHANGO_CDC_DIST_BASE}/${CHANGO_CDC_DIST_NAME}
 
