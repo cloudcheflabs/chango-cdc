@@ -16,13 +16,13 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static io.debezium.data.Envelope.FieldName.*;
-import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toMap;
 
 @Component
