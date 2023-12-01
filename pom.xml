@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>co.cloudcheflabs.chango</groupId>
 	<artifactId>chango-cdc</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.1.0-SNAPSHOT</version>
 	<name>Chango CDC</name>
 	<description>Chango CDC</description>
 	<url>https://github.com/cloudcheflabs/chango-cdc</url>
