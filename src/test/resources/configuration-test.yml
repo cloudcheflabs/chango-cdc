@@ -11,11 +11,11 @@ debezium:
     name=postgres-connector
     connector.class=io.debezium.connector.postgresql.PostgresConnector
     offset.storage=org.apache.kafka.connect.storage.FileOffsetBackingStore
-    offset.storage.file.filename=/tmp/chango-cdc/offset.dat
+    offset.storage.file.filename=/tmp/chango-cdc/offset-student.dat
     offset.flush.interval.ms=60000
     topic.prefix=cdc
     schema.history.internal=io.debezium.storage.file.history.FileSchemaHistory
-    schema.history.internal.file.filename=/tmp/chango-cdc/schemahistory.dat
+    schema.history.internal.file.filename=/tmp/chango-cdc/schemahistory-student.dat
     database.server.name=postgresql-server
     database.server.id=pg-1
     database.hostname=localhost

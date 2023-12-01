@@ -17,9 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -88,23 +86,24 @@ public class CdcHandler implements InitializingBean, DisposableBean {
 
     private void handleEvent(SourceRecord sourceRecord) {
         try {
-            LOG.info("source record: {}", sourceRecord.toString());
             Struct sourceRecordValue = (Struct) sourceRecord.value();
 
             if (sourceRecordValue != null) {
                 Operation operation = Operation.forCode((String) sourceRecordValue.get(OPERATION));
 
-                // Only if this is a transactional operation.
+                // operations except READ.
                 if (operation != Operation.READ) {
 
                     Map<String, Object> message;
-                    String record = AFTER; // For Update & Insert operations.
+                    // for insert and update.
+                    String record = AFTER;
 
                     if (operation == Operation.DELETE) {
-                        record = BEFORE; // For Delete operations.
+                        // for delete.
+                        record = BEFORE;
                     }
 
-                    // Build a map with all row data received.
+                    // construct map with fields.
                     Struct struct = (Struct) sourceRecordValue.get(record);
                     message = struct.schema().fields().stream()
                             .map(Field::name)
@@ -120,10 +119,40 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                         }
                     }
 
-                    // TODO: send message to chango.
+                    // send message to chango.
+
+                    final Set<String> fieldSet = message.keySet();
+
+                    final List<String> reservedFields = Arrays.asList("op", "year", "month", "day", "ts");
+
+                    DateTime dt = DateTime.now();
+
+                    String year = String.valueOf(dt.getYear());
+                    String month = padZero(dt.getMonthOfYear());
+                    String day = padZero(dt.getDayOfMonth());
+                    long ts = dt.getMillis(); // in milliseconds.
+
+                    // if the fields 'year', 'month', 'day', 'ts' exist in the table, then change the field names.
+                    if(fieldSet.contains("year")) {
+                        message.put("_year", message.get("year"));
+                    }
+                    if(fieldSet.contains("month")) {
+                        message.put("_month", message.get("month"));
+                    }
+                    if(fieldSet.contains("day")) {
+                        message.put("_day", message.get("day"));
+                    }
+                    if(fieldSet.contains("ts")) {
+                        message.put("_ts", message.get("ts"));
+                    }
+                    // and add chango specific fields.
+                    message.put("year", year);
+                    message.put("month", month);
+                    message.put("day", day);
+                    message.put("ts", ts);
 
                     // if field 'op' exists in the table, then change the field name.
-                    if(message.keySet().contains("op")) {
+                    if(fieldSet.contains("op")) {
                         message.put("_op", message.get("op"));
                     }
 
@@ -159,32 +188,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                     }
 
 
-                    DateTime dt = DateTime.now();
-
-                    String year = String.valueOf(dt.getYear());
-                    String month = padZero(dt.getMonthOfYear());
-                    String day = padZero(dt.getDayOfMonth());
-                    long ts = dt.getMillis(); // in milliseconds.
-
-                    // if the following fields exist in the table, then change the field names.
-                    if(message.keySet().contains("year")) {
-                        message.put("_year", message.get("year"));
-                    }
-                    if(message.keySet().contains("month")) {
-                        message.put("_month", message.get("month"));
-                    }
-                    if(message.keySet().contains("day")) {
-                        message.put("_day", message.get("day"));
-                    }
-                    if(message.keySet().contains("ts")) {
-                        message.put("_ts", message.get("ts"));
-                    }
-                    // and add chango specific fields.
-                    message.put("year", year);
-                    message.put("month", month);
-                    message.put("day", day);
-                    message.put("ts", ts);
-
+                    // convert message to json.
                     String json = JsonUtils.toJson(message);
                     LOG.info("Operation {} executed with message {}", operation.name(), json);
                     try {
