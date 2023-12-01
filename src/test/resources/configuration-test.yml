@@ -1,8 +1,26 @@
 chango:
-  token: any-chango-credential
-  dataApiUrl: http://any-data-api-endpoint
+  token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJjZGM0MTFkYzIzMzg2NjU0ZGZkYTdjYjk4OTMzNjA1NWNiNyIsImV4cCI6MTcwNjY1OTE5OSwiaWF0IjoxNzAxMzU2NDEyfQ.-WjO6mpNV5QM5t1jwLmBD8tBuRNOxrzcREU6RqLJtHGD0u_TGi28NWG9lFYA-ZKQ-nDwGbr6Nf_MXaUeeO2VAw
+  dataApiUrl: http://chango-private-1.chango.private:80
   schema: cdc_db
-  table: customer
+  table: student
   batchSize: 10000
   interval: 1000
 
+debezium:
+  connector: |-
+    name=postgres-connector
+    connector.class=io.debezium.connector.postgresql.PostgresConnector
+    offset.storage=org.apache.kafka.connect.storage.FileOffsetBackingStore
+    offset.storage.file.filename=/tmp/chango-cdc/offset-student.dat
+    offset.flush.interval.ms=60000
+    topic.prefix=cdc
+    schema.history.internal=io.debezium.storage.file.history.FileSchemaHistory
+    schema.history.internal.file.filename=/tmp/chango-cdc/schemahistory-student.dat
+    database.server.name=postgresql-server
+    database.server.id=pg-1
+    database.hostname=localhost
+    database.port=5432
+    database.user=anyuser
+    database.password=anypassword
+    database.dbname=studentdb
+    table.include.list=public.student

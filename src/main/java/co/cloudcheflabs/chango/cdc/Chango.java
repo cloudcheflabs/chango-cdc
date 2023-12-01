@@ -1,5 +1,6 @@
 package co.cloudcheflabs.chango.cdc;
 
+import co.cloudcheflabs.chango.cdc.component.CdcHandler;
 import co.cloudcheflabs.chango.cdc.config.ConfigurationLoader;
 import co.cloudcheflabs.chango.cdc.util.StringUtils;
 import org.slf4j.Logger;
@@ -25,7 +26,8 @@ public class Chango {
                 StringUtils.getEnv(ENV_CHANGO_CDC_CONFIGURATION_PATH));
 
         ConfigurableApplicationContext applicationContext = new AnnotationConfigApplicationContext(
-                ConfigurationLoader.class
+                ConfigurationLoader.class,
+                CdcHandler.class
         );
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
