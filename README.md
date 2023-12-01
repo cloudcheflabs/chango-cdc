@@ -9,7 +9,7 @@ You need to choose which Debezium version will be used for your database, see th
 After that, choose the concrete maven dependency version of Debezium connector. 
 For example, maven dependency version of Debezium connector for PostgreSQL can be found [here](https://mvnrepository.com/artifact/io.debezium/debezium-connector-postgres).
 
-Package `Chango CDC` distribution with Debezium maven dependency version.
+Package `Chango CDC` distribution with Debezium maven dependency version. Please note that Java 11 and Maven 3 are required to build `Chango CDC`.
 ```agsl
 export DEBEZIUM_VERSION=1.9.7.Final
 
@@ -17,5 +17,7 @@ export DEBEZIUM_VERSION=1.9.7.Final
 --debezium.version=${DEBEZIUM_VERSION} \
 ;
 ```
+
+
 
 
