@@ -91,9 +91,17 @@
 
 		<!-- commons lang3 -->
 		<commons-lang3>3.14.0</commons-lang3>
+
+		<!-- infinispan -->
+		<infinispan.version>13.0.10.Final</infinispan.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.infinispan</groupId>
+			<artifactId>infinispan-commons</artifactId>
+			<version>${infinispan.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
