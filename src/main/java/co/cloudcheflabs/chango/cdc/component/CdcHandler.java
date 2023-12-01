@@ -123,8 +123,6 @@ public class CdcHandler implements InitializingBean, DisposableBean {
 
                     final Set<String> fieldSet = message.keySet();
 
-                    final List<String> reservedFields = Arrays.asList("op", "year", "month", "day", "ts");
-
                     DateTime dt = DateTime.now();
 
                     String year = String.valueOf(dt.getYear());
@@ -132,7 +130,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                     String day = padZero(dt.getDayOfMonth());
                     long ts = dt.getMillis(); // in milliseconds.
 
-                    // if the fields 'year', 'month', 'day', 'ts' exist in the table, then change the field names.
+                    // if the fields 'year', 'month', 'day', 'ts', 'op' exist in the table, then change the field names.
                     if(fieldSet.contains("year")) {
                         message.put("_year", message.get("year"));
                     }
@@ -145,16 +143,15 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                     if(fieldSet.contains("ts")) {
                         message.put("_ts", message.get("ts"));
                     }
-                    // and add chango specific fields.
+                    if(fieldSet.contains("op")) {
+                        message.put("_op", message.get("op"));
+                    }
+
+                    // add chango specific fields.
                     message.put("year", year);
                     message.put("month", month);
                     message.put("day", day);
                     message.put("ts", ts);
-
-                    // if field 'op' exists in the table, then change the field name.
-                    if(fieldSet.contains("op")) {
-                        message.put("_op", message.get("op"));
-                    }
 
                     if (Operation.DELETE.name().equals(operation.name())) {
                         // add fields from the sample message for delete message.
@@ -190,7 +187,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
 
                     // convert message to json.
                     String json = JsonUtils.toJson(message);
-                    LOG.info("Operation {} executed with message {}", operation.name(), json);
+                    //LOG.info("Operation {} executed with message {}", operation.name(), json);
                     try {
                         // send json.
                         changoClient.add(json);
