@@ -42,6 +42,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
     private String table;
     private int batchSize;
     private long interval;
+    private boolean tx = false;
 
     private ChangoClient changoClient;
 
@@ -58,6 +59,10 @@ public class CdcHandler implements InitializingBean, DisposableBean {
         table = configuration.getProperty("chango.table");
         batchSize = Integer.valueOf(configuration.getProperty("chango.batchSize"));
         interval = Long.valueOf(configuration.getProperty("chango.interval"));
+        String txString = configuration.getProperty("chango.tx");
+        if(txString != null) {
+            tx = Boolean.valueOf(txString);
+        }
 
         // construct chango client.
         constructChangoClient();
@@ -80,7 +85,8 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                 schema,
                 table,
                 batchSize,
-                interval
+                interval,
+                tx
         );
     }
 

@@ -5,6 +5,7 @@ chango:
   table: anytable
   batchSize: 10000
   interval: 1000
+  tx: true
 
 debezium:
   connector: |-
