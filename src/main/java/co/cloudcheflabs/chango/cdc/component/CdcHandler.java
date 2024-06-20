@@ -131,21 +131,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
 
                     DateTime dt = DateTime.now();
 
-                    String year = String.valueOf(dt.getYear());
-                    String month = padZero(dt.getMonthOfYear());
-                    String day = padZero(dt.getDayOfMonth());
-                    long ts = dt.getMillis(); // in milliseconds.
-
-                    // if the fields 'year', 'month', 'day', 'ts', 'op' exist in the table, then change the field names.
-                    if(fieldSet.contains("year")) {
-                        message.put("_year", message.get("year"));
-                    }
-                    if(fieldSet.contains("month")) {
-                        message.put("_month", message.get("month"));
-                    }
-                    if(fieldSet.contains("day")) {
-                        message.put("_day", message.get("day"));
-                    }
+                    // if the fields 'ts', 'op' exist in the table, then change the field names.
                     if(fieldSet.contains("ts")) {
                         message.put("_ts", message.get("ts"));
                     }
@@ -154,10 +140,7 @@ public class CdcHandler implements InitializingBean, DisposableBean {
                     }
 
                     // add chango specific fields.
-                    message.put("year", year);
-                    message.put("month", month);
-                    message.put("day", day);
-                    message.put("ts", ts);
+                    message.put("ts", dt.toString());
 
                     if (Operation.DELETE.name().equals(operation.name())) {
                         // add fields from the sample message for delete message.
