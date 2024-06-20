@@ -2,7 +2,7 @@
 
 set -ex
 
-export CHANGO_CDC_VERSION=1.0.0
+export CHANGO_CDC_VERSION=1.1.0
 export DEBEZIUM_VERSION=1.9.7.Final
 
 
